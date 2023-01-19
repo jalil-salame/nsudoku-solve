@@ -1,4 +1,5 @@
-use std::{error::Error, time::Instant};
+
+use std::time::Instant;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use sudoku::Sudoku;
@@ -31,11 +32,16 @@ enum SudokuSolver {
     DFS,
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> color_eyre::Result<()> {
+    color_eyre::install()?;
+
     let cli = Cli::parse();
 
     match cli.mode {
         Mode::Test { solver } => {
+            #[cfg(debug_assertions)]
+            println!("[WARN] Running test in debug mode, it will take very long to complete");
+
             let puzzle: Sudoku =
                 ".......1.4.........2...........5.4.7..8...3....1.9....3..4..2...5.1........8.6..."
                     .parse()
