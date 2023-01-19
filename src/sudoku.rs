@@ -12,11 +12,13 @@ pub struct Sudoku(Array2<SudokuValue>);
 
 impl Sudoku {
     /// Create a new empty 9x9 Sudoku
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self::from_order(9)
     }
 
     /// Create a new empty Sudoku of size order * order
+    #[allow(dead_code)]
     fn from_order(order: usize) -> Self {
         Self::from_order_vec(order, vec![SudokuValue::default(); order * order])
     }
