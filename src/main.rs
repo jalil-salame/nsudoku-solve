@@ -4,7 +4,7 @@ use std::time::Instant;
 use clap::{Parser, Subcommand, ValueEnum};
 use sudoku::Sudoku;
 
-use crate::sudoku::solve::{dfs, naive_dfs};
+use crate::sudoku::solve::{dfs, naive_dfs, sorted_dfs};
 
 mod sudoku;
 
@@ -26,10 +26,13 @@ enum Mode {
 
 #[derive(Debug, Default, ValueEnum, Clone)]
 enum SudokuSolver {
-    /// A naive recursive DFS, doesn't implement any smart strategies
+    /// [EXTREMELY SLOW] A naive recursive DFS, doesn't implement any smart strategies
     NaiveDFS,
+    /// [EXTREMELY SLOW] Prunes possibilities when fixing a value
     #[default]
     DFS,
+    /// Sorts possibilities by ammount
+    SortedDFS,
 }
 
 fn main() -> color_eyre::Result<()> {
@@ -53,6 +56,7 @@ fn main() -> color_eyre::Result<()> {
             let solution = match solver {
                 SudokuSolver::NaiveDFS => naive_dfs(puzzle),
                 SudokuSolver::DFS => dfs(puzzle),
+                SudokuSolver::SortedDFS => sorted_dfs(puzzle),
             };
 
             println!("Took {:?}", start.elapsed());

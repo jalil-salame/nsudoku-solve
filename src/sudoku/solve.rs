@@ -61,13 +61,46 @@ fn dfs_impl(sudoku: AugmentedSudoku) -> InternalResult {
 
     // println!("{sudoku}");
 
-    let possible = match possible {
-        AugmentedValue::Fixed(_) => unreachable!(),
-        AugmentedValue::Possible(possible) => possible.clone(),
+    let possible = if let AugmentedValue::Possible(possible) = possible {
+        possible.clone()
+    } else {
+        unreachable!()
     };
 
-    for value in possible.clone() {
+    for value in possible {
         propagate_ok!(dfs_impl(sudoku.fix_value(ix, value)));
+    }
+
+    Err(sudoku)
+}
+
+pub fn sorted_dfs(sudoku: super::Sudoku) -> SudokuResult {
+    let mut sudoku: AugmentedSudoku = sudoku.into();
+
+    sudoku.prune_possible();
+
+    Ok(sorted_dfs_impl(sudoku)?.into())
+}
+
+fn sorted_dfs_impl(sudoku: AugmentedSudoku) -> InternalResult {
+    let Some((ix, possible)) = sudoku.data.indexed_iter().min_by_key(|(_, x)| {
+        if let AugmentedValue::Possible(x) = x {
+            x.len()
+        } else {
+            usize::MAX
+        }
+    }) else {
+        return Ok(sudoku);
+    };
+
+    let possible = if let AugmentedValue::Possible(possible) = possible {
+        possible.clone()
+    } else {
+        return Ok(sudoku)
+    };
+
+    for value in possible {
+        propagate_ok!(sorted_dfs_impl(sudoku.fix_value(ix, value)));
     }
 
     Err(sudoku)
