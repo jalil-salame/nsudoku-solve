@@ -1,7 +1,12 @@
-use std::{path::PathBuf, str::FromStr, time::Instant};
+use std::{
+    path::PathBuf,
+    str::FromStr,
+    time::{Duration, Instant},
+};
 
 use clap::{Parser, Subcommand, ValueEnum};
-use indicatif::{ProgressIterator, ProgressStyle};
+use indicatif::{ParallelProgressIterator, ProgressStyle};
+use rayon::prelude::*;
 use sudoku::Sudoku;
 
 use crate::sudoku::solve::{dfs, naive_dfs, sorted_dfs};
@@ -58,39 +63,39 @@ fn main() -> color_eyre::Result<()> {
                 println!("Took {:?} to parse puzzles", start.elapsed());
 
                 println!("Testing {solver:?}:");
-                let mut longest = None;
+                let num_puzzles = puzzles.len();
                 let start = Instant::now();
-                for (ix, puzzle) in puzzles
-                    .into_iter()
+                let longest = puzzles
+                    .into_par_iter()
                     .progress_with_style(
                         ProgressStyle::default_bar()
-                            .template("[{pos:>5}/{len}] {per_sec:>9} {wide_bar} {eta_precise}")
+                            .template("[{pos:>5}/{len}] {per_sec:>10} {wide_bar} {eta_precise}/{duration_precise}")
                             .expect("valid template"),
                     )
-                    .enumerate()
-                {
-                    let start = Instant::now();
-                    let solution = match solver {
-                        SudokuSolver::NaiveDFS => naive_dfs(puzzle),
-                        SudokuSolver::DFS => dfs(puzzle),
-                        SudokuSolver::SortedDFS => sorted_dfs(puzzle),
-                    };
-                    let end = start.elapsed();
-                    if let Some((_, elapsed)) = &longest {
-                        if elapsed > &end {
-                            longest = Some((ix, end));
-                        }
-                    } else {
-                        longest = Some((ix, end));
-                    }
+                    .fold(
+                        || Duration::from_secs(0),
+                        |longest, puzzle| {
+                            let start = Instant::now();
+                            let solution = match solver {
+                                SudokuSolver::DFS => dfs(puzzle),
+                                SudokuSolver::NaiveDFS => naive_dfs(puzzle),
+                                SudokuSolver::SortedDFS => sorted_dfs(puzzle),
+                            };
+                            let end = start.elapsed();
 
-                    if let Err(puzzle) = solution {
-                        panic!("Failed to solve {puzzle}");
-                    }
-                }
-                println!("Took {:?}", start.elapsed());
-                let (ix, end) = longest.unwrap();
-                println!("The longest solve took {end:?}, it was puzzle {}", ix + 1);
+                            if let Err(puzzle) = solution {
+                                panic!("Failed to solve {puzzle}");
+                            }
+
+                            longest.max(end)
+                        },
+                    )
+                    .reduce(|| Duration::from_secs(0), Duration::max);
+                let end = start.elapsed();
+                let cpu_time = end * num_cpus::get() as u32;
+                let per_puzzle = cpu_time / num_puzzles as u32;
+                println!("Took {end:?} [{per_puzzle:?}/sudoku]");
+                println!("The longest solve took {longest:?}");
             } else {
                 let puzzle: Sudoku =
                 ".......1.4.........2...........5.4.7..8...3....1.9....3..4..2...5.1........8.6..."
