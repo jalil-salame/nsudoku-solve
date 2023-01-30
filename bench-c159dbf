@@ -1,0 +1,4 @@
+Benchmark 1: cargo run --release -- test --sudoku '......2.1..4.3.............37.....8.6..2........5.....54....6......7..4...2..1...'
+  Time (mean ± σ):     932.6 ms ± 447.8 ms    [User: 907.1 ms, System: 24.5 ms]
+  Range (min … max):   201.6 ms … 2085.5 ms    14 runs
+ 
