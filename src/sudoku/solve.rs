@@ -96,7 +96,7 @@ fn sorted_dfs_impl(sudoku: AugmentedSudoku) -> InternalResult {
     let possible = if let AugmentedValue::Possible(possible) = possible {
         possible.clone()
     } else {
-        return Ok(sudoku)
+        return Ok(sudoku);
     };
 
     for value in possible {
@@ -170,8 +170,7 @@ impl AugmentedSudoku {
         self.data
             .exact_chunks_mut((self.cell_size, self.cell_size))
             .into_iter()
-            .skip(chunk)
-            .next()
+            .nth(chunk)
             .unwrap()
             .map_inplace(|val| {
                 val.remove(value);
@@ -221,10 +220,7 @@ impl From<super::Sudoku> for AugmentedSudoku {
                         if let Some(val) = val.0 {
                             val.into()
                         } else {
-                            (1..=order as u8)
-                                .into_iter()
-                                .filter_map(NonZeroU8::new)
-                                .collect()
+                            (1..=order as u8).filter_map(NonZeroU8::new).collect()
                         }
                     })
                     .collect(),
@@ -293,4 +289,34 @@ impl Display for AugmentedSudoku {
 
         write!(f, "{horizontal_line}")
     }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::sudoku::Sudoku;
+
+    use super::dfs;
+
+    #[test]
+    fn puzzle54_solvable() {
+        let sudoku: Sudoku =
+            ".......16.4...5.......2.......6..43.2...1....3.....5.......37..1..8.......2......"
+                .parse()
+                .expect("Successful parse");
+
+        assert!(dfs(sudoku).is_ok())
+    }
+
+    // extern crate test;
+    // use test::Bencher;
+    //
+    // #[bench]
+    // fn sudoku_54(bench: &mut Bencher) {
+    //     let sudoku: Sudoku =
+    //         ".......16.4...5.......2.......6..43.2...1....3.....5.......37..1..8.......2......"
+    //             .parse()
+    //             .expect("Successful parse");
+
+    //     bench.iter(|| dfs(sudoku.clone()).is_ok())
+    // }
 }
