@@ -90,21 +90,16 @@ pub fn sorted_dfs(sudoku: super::Sudoku) -> SudokuResult {
 }
 
 fn sorted_dfs_impl(sudoku: &mut AugmentedSudoku) -> InternalResult {
-    let Some((ix, possible)) = sudoku.data.indexed_iter().min_by_key(|(_, x)| {
-        if let AugmentedValue::Possible(x) = x {
+    let Some((ix, possible)) = sudoku.data.indexed_iter().filter_map(|(ix, value)| match value {
+        AugmentedValue::Fixed(_) => None,
+        AugmentedValue::Possible(set) => Some((ix, set)),
+    }).min_by_key(|(_, x)| {
             x.len()
-        } else {
-            usize::MAX
-        }
     }) else {
         return ControlFlow::Break(sudoku.clone().into());
     };
 
-    let possible = if let AugmentedValue::Possible(possible) = possible {
-        possible.clone()
-    } else {
-        return ControlFlow::Break(sudoku.clone().into());
-    };
+    let possible = possible.clone();
 
     // If it's the only possiblitiy then just fix it
     if possible.len() == 1 {
