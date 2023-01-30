@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Display, num::NonZeroU8};
+use std::{collections::HashSet, fmt::Display, num::NonZeroU8, ops::ControlFlow};
 
 use ndarray::Array2;
 
@@ -15,7 +15,7 @@ macro_rules! propagate_ok {
 
 pub type SudokuResult = Result<super::Sudoku, super::Sudoku>;
 
-type InternalResult = Result<AugmentedSudoku, AugmentedSudoku>;
+type InternalResult = ControlFlow<super::Sudoku, ()>;
 
 pub fn naive_dfs(mut sudoku: super::Sudoku) -> SudokuResult {
     let order = sudoku.order();
@@ -42,11 +42,15 @@ pub fn naive_dfs(mut sudoku: super::Sudoku) -> SudokuResult {
 }
 
 pub fn dfs(sudoku: super::Sudoku) -> SudokuResult {
+    let orig = sudoku.clone();
     let mut sudoku: AugmentedSudoku = sudoku.into();
 
     sudoku.prune_possible();
 
-    Ok(dfs_impl(sudoku)?.into())
+    match dfs_impl(sudoku) {
+        ControlFlow::Continue(_) => Err(orig),
+        ControlFlow::Break(solved) => Ok(solved),
+    }
 }
 
 fn dfs_impl(sudoku: AugmentedSudoku) -> InternalResult {
@@ -56,7 +60,7 @@ fn dfs_impl(sudoku: AugmentedSudoku) -> InternalResult {
                 .indexed_iter()
                 .find(|(_, value)| !value.is_fixed())
         else {
-            return Ok(sudoku);
+            return ControlFlow::Break(sudoku.into());
         };
 
     // println!("{sudoku}");
@@ -68,10 +72,10 @@ fn dfs_impl(sudoku: AugmentedSudoku) -> InternalResult {
     };
 
     for value in possible {
-        propagate_ok!(dfs_impl(sudoku.fix_value(ix, value)));
+        dfs_impl(sudoku.fix_value(ix, value))?;
     }
 
-    Err(sudoku)
+    ControlFlow::Continue(())
 }
 
 pub fn sorted_dfs(sudoku: super::Sudoku) -> SudokuResult {
@@ -79,10 +83,13 @@ pub fn sorted_dfs(sudoku: super::Sudoku) -> SudokuResult {
 
     sudoku.prune_possible();
 
-    Ok(sorted_dfs_impl(sudoku)?.into())
+    match sorted_dfs_impl(&mut sudoku) {
+        ControlFlow::Continue(_) => Err(sudoku.into()),
+        ControlFlow::Break(solved) => Ok(solved),
+    }
 }
 
-fn sorted_dfs_impl(sudoku: AugmentedSudoku) -> InternalResult {
+fn sorted_dfs_impl(sudoku: &mut AugmentedSudoku) -> InternalResult {
     let Some((ix, possible)) = sudoku.data.indexed_iter().min_by_key(|(_, x)| {
         if let AugmentedValue::Possible(x) = x {
             x.len()
@@ -90,20 +97,28 @@ fn sorted_dfs_impl(sudoku: AugmentedSudoku) -> InternalResult {
             usize::MAX
         }
     }) else {
-        return Ok(sudoku);
+        return ControlFlow::Break(sudoku.clone().into());
     };
 
     let possible = if let AugmentedValue::Possible(possible) = possible {
         possible.clone()
     } else {
-        return Ok(sudoku);
+        return ControlFlow::Break(sudoku.clone().into());
     };
 
-    for value in possible {
-        propagate_ok!(sorted_dfs_impl(sudoku.fix_value(ix, value)));
+    // If it's the only possiblitiy then just fix it
+    if possible.len() == 1 {
+        let value = possible.into_iter().next().unwrap();
+        sudoku.fix_value_inplace(ix, value);
+        return sorted_dfs_impl(sudoku);
     }
 
-    Err(sudoku)
+    // Clone for each possible value otherwise
+    for value in possible {
+        sorted_dfs_impl(&mut sudoku.fix_value(ix, value))?;
+    }
+
+    ControlFlow::Continue(())
 }
 
 /// Augmented Sudoku Value
