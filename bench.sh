@@ -16,4 +16,6 @@ file="bench-$commit"
 
 cargo build --release
 hyperfine "cargo run --release -- test --sudoku '......2.1..4.3.............37.....8.6..2........5.....54....6......7..4...2..1...'" | tee "$file"
+[ -f ./sudoku17.txt ] \
+    && cargo run --release -- test --file ./sudoku17.txt | tee -a "$file"
 echo "Benchmarked $commit"
