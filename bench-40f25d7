@@ -1,0 +1,9 @@
+Benchmark 1: cargo run --release -- test --sudoku '......2.1..4.3.............37.....8.6..2........5.....54....6......7..4...2..1...'
+  Time (mean ± σ):      1.200 s ±  0.560 s    [User: 1.177 s, System: 0.022 s]
+  Range (min … max):    0.155 s …  2.083 s    10 runs
+ 
+Reading Sudokus from file: ./sudoku17.txt
+Took 33.914973ms to parse puzzles
+Testing SortedDfs:
+Took 387.401009989s [94.582248ms/sudoku]
+The longest solve was puzzle #12489 and took 8.790075703s
