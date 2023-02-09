@@ -10,7 +10,7 @@ git diff-index --quiet HEAD \
     || fail 'Git Tree Dirty commit changes before benchmarking'
 
 commit="$(git rev-parse --short HEAD)"
-file="bench-$commit"
+file="bench-results/bench-$commit"
 
 [ -e "$file" ] && fail "$file exists refusing to benchmark again"
 
