@@ -1,5 +1,9 @@
 [package]
 name = "nsudoku-solver"
+description = "A N-Dimensional Sudoku solver"
+authors = ["Jalil David Salamé Messina <jalil.salame@gmail.com>"]
+license = "MIT"
+homepage = "https://jalil-salame.github.io/nsudoku-solver/"
 version = "0.1.0"
 edition = "2021"
 
