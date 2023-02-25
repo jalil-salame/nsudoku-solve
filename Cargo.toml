@@ -4,7 +4,7 @@ description = "A N-Dimensional Sudoku solver"
 authors = ["Jalil David Salamé Messina <jalil.salame@gmail.com>"]
 license = "MIT"
 homepage = "https://jalil-salame.github.io/nsudoku-solver/"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
